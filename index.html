@@ -568,37 +568,43 @@ const BASE_URL = window.location.hostname === "localhost"
 
 
 
-    async function fetchAIReply(message) {
-      try {
-        const response = await             fetch(`${BASE_URL}/api/chat`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: message
-          })
-        });
+ async function fetchAIReply(message) {
+  try {
+    const response = await fetch(`${BASE_URL}/api/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: message })
+    });
 
-        const data = await response.json();
+    const data = await response.json();
+    console.log("🔍 رد السيرفر:", data);
 
-        // الرد الأساسي لو السيرفر بيرجع reply مباشرة
-        if (data.reply) {
-          return data.reply;
-        }
-
-        // fallback لو بيرجع response من chat API زي GPT
-        if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
-          return data.choices[0].message.content;
-        }
-
-        return "معرفتش أرد دلوقتي، جرب تاني.";
-
-      } catch (err) {
-        console.error("Error in fetchAIReply:", err);
-        return "❌ في مشكلة في الاتصال بالسيرفر، جرب تاني بعد شوية.";
-      }
+    // لو فيه خطأ من السيرفر
+    if (data.error) {
+      console.warn("⚠️ خطأ من الباك إند:", data.error);
+      return "❌ في مشكلة في السيرفر: " + data.error;
     }
+
+    // الرد الأساسي اللي الكود متوقعه
+    if (data.reply && typeof data.reply === "string") {
+      return data.reply;
+    }
+
+    // fallback لو شكل الرد مختلف (لو بيرجع choices زي GPT raw)
+    if (data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
+      return data.choices[0].message.content;
+    }
+
+    return "❌ معرفتش أرد دلوقتي، جرب تاني.";
+
+  } catch (err) {
+    console.error("❌ Error in fetchAIReply:", err);
+    return "❌ في مشكلة في الاتصال بالسيرفر، جرب تاني بعد شوية.";
+  }
+}
+
 
 
     if (window.visualViewport) {
